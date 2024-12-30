@@ -11,11 +11,13 @@ PASSWORD = os.getenv("BITGET_PASSWORD")
 
 
 # Initialize the Bitget exchange
-bitget = ccxt.bitget({
+bitget = ccxt.bitget(
+    {
         "apiKey": API_KEY,
         "secret": SECRET_KEY,
         "password": PASSWORD,
-    })
+    }
+)
 
 while True:
 
