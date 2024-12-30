@@ -3,6 +3,7 @@ Python-based analytics of CEX OHLCV volatility and its associated potential trad
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/sebastien-tetaud/cex-market-analysis/tree/main/LICENSE)
 [![CodeQL](https://github.com/sebastien-tetaud/cex-market-analysis/actions/workflows/codeql.yml/badge.svg)](https://github.com/sebastien-tetaud/cex-market-analysis/actions/workflows/codeql.yml)
+[![Super-Linter](https://github.com/sebastien-tetaud/cex-market-analysis/actions/workflows/super-linter.yml/badge.svg)](https://github.com/sebastien-tetaud/cex-market-analysis/actions/workflows/super-linter.yml)
 
 
 
