@@ -85,18 +85,21 @@ class OHLCVScraper:
         final_df['date'] = pd.to_datetime(final_df['date'], unit='ms')
         return final_df
 
-    def write_to_csv(self, filename, df):
+    def write_to_csv(self, filename, df, timeframe):
         """
-        Save the DataFrame to a CSV file.
+        Save the DataFrame to a CSV file in a folder structure based on exchange ID and timeframe.
 
         Args:
             filename (str): The name of the CSV file.
             df (pd.DataFrame): The DataFrame to save.
+            timeframe (str): The timeframe for candles (e.g., "1h", "1d").
         """
-        path = Path("./data/raw/", self.exchange_id)
+        # Create folder structure: ./data/<exchange_id>/<timeframe>/
+        path = Path("./data/", self.exchange_id, timeframe)
         path.mkdir(parents=True, exist_ok=True)
         full_path = path / filename
 
+        # Save the DataFrame to the CSV file
         df.to_csv(full_path, index=False)
         print(f"Saved data to {full_path}")
 
@@ -114,7 +117,7 @@ class OHLCVScraper:
         df = self.scrape_ohlcv(symbol, timeframe, start_date_str, end_date_str, limit)
         sanitized_symbol = symbol.replace("/", "_")
         filename = f"{sanitized_symbol}_{timeframe}.csv"
-        self.write_to_csv(filename, df)
+        self.write_to_csv(filename, df, timeframe)
 
 
 # Example Usage
