@@ -95,7 +95,7 @@ class OHLCVScraper:
             timeframe (str): The timeframe for candles (e.g., "1h", "1d").
         """
         # Create folder structure: ./data/<exchange_id>/<timeframe>/
-        path = Path("./data/", self.exchange_id, timeframe)
+        path = Path("./data/test/", self.exchange_id, timeframe)
         path.mkdir(parents=True, exist_ok=True)
         full_path = path / filename
 
@@ -120,13 +120,40 @@ class OHLCVScraper:
         self.write_to_csv(filename, df, timeframe)
 
 
-# Example Usage
-# if __name__ == "__main__":
-#     scraper = OHLCVScraper(exchange_id="binance")
-#     scraper.scrape_candles_to_csv(
-#         symbol="BTC/USDT",
-#         timeframe="1m",
-#         start_date_str="2021-01-01T00:00:00",
-#         end_date_str="2024-01-01T00:00:00",
-#         limit=100
-#     )
+def get_top_usdt_symbol_by_volume(exchange_id, top_n=100):
+    """
+    Fetch the top N cryptocurrencies traded against USDT based on 24h volume.
+
+    Args:
+        exchange_id (str): The exchange ID (e.g., "binance", "bitget").
+        top_n (int): The number of top cryptocurrencies to fetch (default is 100).
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the top N USDT pairs by 24h volume.
+    """
+    try:
+        # Initialize the exchange
+        exchange = getattr(ccxt, exchange_id)({'enableRateLimit': True})
+        
+        # Fetch all tickers
+        tickers = exchange.fetch_tickers()
+        
+        # Extract relevant data for USDT pairs
+        data = []
+        for symbol, ticker in tickers.items():
+            if symbol.endswith("/USDT"):  # Filter for USDT pairs
+                data.append({
+                    "symbol": symbol,
+                    "volume_24h": ticker.get("quoteVolume", 0),  # 24h trading volume in USDT
+                    "price": ticker.get("last", 0),  # Last traded price
+                })
+        
+        # Convert to DataFrame and sort by volume
+        df = pd.DataFrame(data)
+        df = df.sort_values(by="volume_24h", ascending=False).head(top_n)
+        
+        return df
+
+    except Exception as e:
+        print(f"Error fetching data: {e}")
+        return pd.DataFrame()

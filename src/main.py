@@ -6,8 +6,8 @@ import pandas as pd
 if __name__ == "__main__":
     
     
-    scraper = OHLCVScraper(exchange_id="binance")
-    df = pd.read_csv("/home/ubuntu/project/finance/cex-market-analysis/symbols/symbols.csv")
+    scraper = OHLCVScraper(exchange_id="bitget")
+    df = pd.read_csv("/home/ubuntu/project/finance/cex-market-analysis/symbols/bitget.csv")
     symbols = df["symbol"].values
     timeframes = ['1d', '12h', '6h', '4h', '2h', '1h', '30m', '15m', '5m']
     for symbol in symbols:
