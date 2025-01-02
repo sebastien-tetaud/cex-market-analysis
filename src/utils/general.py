@@ -9,14 +9,16 @@ class OHLCVScraper:
     A class to scrape OHLCV (Open, High, Low, Close, Volume) data from cryptocurrency exchanges using ccxt.
     """
 
-    def __init__(self, exchange_id):
+    def __init__(self, path_save, exchange_id):
         """
         Initialize the scraper with the specified exchange.
 
         Args:
             exchange_id (str): The exchange ID (e.g., "binance", "bitget").
         """
+        self.path = path_save
         self.exchange_id = exchange_id
+        # self.market_type =  market_type
         self.exchange = getattr(ccxt, exchange_id)({'enableRateLimit': True})
 
     def fetch_ohlcv(self, symbol, timeframe, since, limit):
@@ -95,7 +97,7 @@ class OHLCVScraper:
             timeframe (str): The timeframe for candles (e.g., "1h", "1d").
         """
         # Create folder structure: ./data/<exchange_id>/<timeframe>/
-        path = Path("./data/test/", self.exchange_id, timeframe)
+        path = Path(self.path, self.exchange_id, timeframe)
         path.mkdir(parents=True, exist_ok=True)
         full_path = path / filename
 
