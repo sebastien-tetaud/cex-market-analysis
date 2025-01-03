@@ -2,7 +2,7 @@ from pathlib import Path
 
 import ccxt
 import pandas as pd
-
+import time 
 
 class OHLCVScraper:
     """
@@ -53,39 +53,42 @@ class OHLCVScraper:
         Returns:
             pd.DataFrame: A DataFrame containing the scraped OHLCV data.
         """
-        start_date = pd.Timestamp(start_date_str)
-        end_date = pd.Timestamp(end_date_str)
+        start_timestamp = int(pd.Timestamp(start_date_str).timestamp() * 1000)
+        end_timestamp = int(pd.Timestamp(end_date_str).timestamp() * 1000)
 
-        start_date_ms = int(start_date.timestamp() * 1000)
-        end_date_ms = int(end_date.timestamp() * 1000)
+        # Fetch data in chunks of 'limit' timesteps
+        data = []
+        current_timestamp = start_timestamp
+        max_retries = 3
 
-        all_ohlcv = []
-        current_timestamp = start_date_ms
+        while current_timestamp < end_timestamp:
+            retries = 0
+            while retries < max_retries:
+                try:
+                    ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since=current_timestamp, limit=limit)
+                    if not ohlcv:
+                        retries += 1
+                        print(f"No data returned. Retrying {retries}/{max_retries}...")
+                        time.sleep(1)  # Wait 1 second before retrying
+                        continue
+                    data.extend(ohlcv)
+                    current_timestamp = ohlcv[-1][0] + 1  # Update timestamp to the last candle + 1ms
+                    print(f"Fetched data up to {pd.to_datetime(current_timestamp, unit='ms')}")
+                    break
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    retries += 1
+            if retries == max_retries:
+                print(f"Max retries reached for timestamp {pd.to_datetime(current_timestamp, unit='ms')}. Skipping...")
+                current_timestamp += 1 * 60 * 1000 
 
-        while current_timestamp < end_date_ms:
-            try:
-                ohlcv = self.fetch_ohlcv(symbol, timeframe, current_timestamp, limit)
-
-                if not ohlcv:
-                    print(f"No data returned for {self.exchange.iso8601(current_timestamp)}. Skipping to the next timeframe.")
-                    timeframe_duration_ms = self.exchange.parse_timeframe(timeframe) * 1000
-                    current_timestamp += timeframe_duration_ms * limit
-                    continue
-
-                all_ohlcv += ohlcv
-                print(f"{len(all_ohlcv)} {symbol} candles in total from {self.exchange.iso8601(all_ohlcv[0][0])} to {self.exchange.iso8601(all_ohlcv[-1][0])}")
-
-                last_date = pd.Timestamp(ohlcv[-1][0], unit='ms')
-                timedelta = last_date - pd.Timestamp(ohlcv[-2][0], unit='ms') if len(ohlcv) > 1 else pd.Timedelta(self.exchange.parse_timeframe(timeframe), unit='ms')
-                current_timestamp = int((last_date + timedelta).timestamp() * 1000)
-
-            except Exception as e:
-                print(f"Error while fetching data: {e}")
-                break
-
-        final_df = pd.DataFrame(all_ohlcv, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-        final_df['date'] = pd.to_datetime(final_df['date'], unit='ms')
-        return final_df
+        # Create DataFrame if data exists
+        if data:
+            df = pd.DataFrame(data, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
+            df['date'] = pd.to_datetime(df['date'], unit='ms')
+            print(df)
+        
+        return df
 
     def write_to_csv(self, filename, df, timeframe):
         """
@@ -159,3 +162,38 @@ def get_top_usdt_symbol_by_volume(exchange_id, top_n=100):
     except Exception as e:
         print(f"Error fetching data: {e}")
         return pd.DataFrame()
+
+
+def check_missing_timestamps(df, freq='1min'):
+    """
+    Checks for missing timestamps in a DataFrame with a datetime index.
+
+    Parameters:
+    ----------
+    df : pd.DataFrame
+        The input DataFrame with a 'date' column or a datetime index.
+    freq : str, optional
+        The frequency of the timestamps to check for (default is '1min').
+
+    Returns:
+    -------
+    pd.DatetimeIndex
+        A DatetimeIndex of missing timestamps. If no timestamps are missing, returns an empty DatetimeIndex.
+    """
+    # Ensure 'date' column is in datetime format if it exists
+    if 'date' in df.columns:
+        df = df.copy()  # Avoid modifying the original DataFrame
+        df['date'] = pd.to_datetime(df['date'])
+        df.set_index('date', inplace=True)
+
+    # Ensure the index is a DatetimeIndex
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError("The DataFrame index must be a DatetimeIndex or a 'date' column must exist.")
+
+    # Generate a complete range of timestamps
+    complete_range = pd.date_range(start=df.index.min(), end=df.index.max(), freq=freq)
+
+    # Identify missing timestamps
+    missing_timestamps = complete_range.difference(df.index)
+
+    return missing_timestamps

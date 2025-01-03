@@ -15,8 +15,8 @@ def scrape_data(args):
         scraper.scrape_candles_to_csv(
             symbol=symbol,
             timeframe=timeframe,
-            start_date_str="2017-08-01T00:00:00",
-            end_date_str="2025-01-01T00:00:00",
+            start_date_str="2024-10-01 00:00:00",
+            end_date_str="2025-01-01 00:00:00",
             limit=100
         )
     except Exception as e:
@@ -24,11 +24,10 @@ def scrape_data(args):
 
 if __name__ == "__main__":
     
-    # Example usage
     
-    exchange_id = "binance"
-    path_save = f"/home/ubuntu/project/finance/cex-market-analysis/src/data/{exchange_id}/spot"
-    timeframes = ['1d', '12h', '6h', '4h', '1h', '30m', '15m', '5m']
+    exchange_id = "bitget"
+    path_save = f"/home/ubuntu/project/finance/cex-market-analysis/src/data/spot"
+    timeframes = ['1m']
 
     top_symbols = get_top_usdt_symbol_by_volume(exchange_id, top_n=100)
     symbols = top_symbols["symbol"].values
@@ -36,5 +35,5 @@ if __name__ == "__main__":
     # Create a list of tasks
     tasks = [(symbol, timeframe, scraper) for symbol in symbols for timeframe in timeframes]
     # Use multiprocessing Pool with 8 processes
-    with Pool(processes=8) as pool:
+    with Pool(processes=6) as pool:
         pool.map(scrape_data, tasks)
