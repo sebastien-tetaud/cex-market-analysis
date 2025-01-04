@@ -101,7 +101,7 @@ class OHLCVScraper:
             timeframe (str): The timeframe for candles (e.g., "1h", "1d").
         """
         # Create folder structure: ./data/<exchange_id>/<timeframe>/
-        path = Path(self.path, self.exchange_id)
+        path = Path(self.path)
         path.mkdir(parents=True, exist_ok=True)
         full_path = path / filename
 
@@ -126,7 +126,7 @@ class OHLCVScraper:
         self.write_to_csv(filename, df)
 
 
-def get_top_usdt_symbol_by_volume(exchange_id, top_n=100):
+def get_top_symbol_by_volume(exchange, pair_filter, top_n=100):
     """
     Fetch the top N cryptocurrencies traded against USDT based on 24h volume.
 
@@ -137,17 +137,17 @@ def get_top_usdt_symbol_by_volume(exchange_id, top_n=100):
     Returns:
         pd.DataFrame: A DataFrame containing the top N USDT pairs by 24h volume.
     """
+    
     try:
         # Initialize the exchange
-        exchange = getattr(ccxt, exchange_id)({'enableRateLimit': True})
-        
         # Fetch all tickers
         tickers = exchange.fetch_tickers()
         
         # Extract relevant data for USDT pairs
         data = []
+
         for symbol, ticker in tickers.items():
-            if symbol.endswith("/USDT:USDT"):  # Filter for USDT pairs
+            if symbol.endswith(pair_filter):  # Filter for USDT pairs
                 data.append({
                     "symbol": symbol,
                     "volume_24h": ticker.get("quoteVolume", 0),  # 24h trading volume in USDT
