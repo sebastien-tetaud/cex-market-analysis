@@ -9,7 +9,7 @@ class OHLCVScraper:
     A class to scrape OHLCV (Open, High, Low, Close, Volume) data from cryptocurrency exchanges using ccxt.
     """
 
-    def __init__(self, path_save, exchange_id):
+    def __init__(self, path_save, exchange, exchange_id):
         """
         Initialize the scraper with the specified exchange.
 
@@ -18,8 +18,7 @@ class OHLCVScraper:
         """
         self.path = path_save
         self.exchange_id = exchange_id
-        # self.market_type =  market_type
-        self.exchange = getattr(ccxt, exchange_id)({'enableRateLimit': True})
+        self.exchange = exchange
 
     def fetch_ohlcv(self, symbol, timeframe, since, limit):
         """
@@ -66,6 +65,7 @@ class OHLCVScraper:
             while retries < max_retries:
                 try:
                     ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since=current_timestamp, limit=limit)
+                    
                     if not ohlcv:
                         retries += 1
                         print(f"No data returned. Retrying {retries}/{max_retries}...")
@@ -74,6 +74,7 @@ class OHLCVScraper:
                     data.extend(ohlcv)
                     current_timestamp = ohlcv[-1][0] + 1  # Update timestamp to the last candle + 1ms
                     print(f"Fetched data up to {pd.to_datetime(current_timestamp, unit='ms')}")
+                    time.sleep(0.5)
                     break
                 except Exception as e:
                     print(f"An error occurred: {e}")
@@ -90,7 +91,7 @@ class OHLCVScraper:
         
         return df
 
-    def write_to_csv(self, filename, df, timeframe):
+    def write_to_csv(self, filename, df):
         """
         Save the DataFrame to a CSV file in a folder structure based on exchange ID and timeframe.
 
@@ -100,7 +101,7 @@ class OHLCVScraper:
             timeframe (str): The timeframe for candles (e.g., "1h", "1d").
         """
         # Create folder structure: ./data/<exchange_id>/<timeframe>/
-        path = Path(self.path, self.exchange_id, timeframe)
+        path = Path(self.path, self.exchange_id)
         path.mkdir(parents=True, exist_ok=True)
         full_path = path / filename
 
@@ -122,7 +123,7 @@ class OHLCVScraper:
         df = self.scrape_ohlcv(symbol, timeframe, start_date_str, end_date_str, limit)
         sanitized_symbol = symbol.replace("/", "_")
         filename = f"{sanitized_symbol}_{timeframe}.csv"
-        self.write_to_csv(filename, df, timeframe)
+        self.write_to_csv(filename, df)
 
 
 def get_top_usdt_symbol_by_volume(exchange_id, top_n=100):
@@ -146,7 +147,7 @@ def get_top_usdt_symbol_by_volume(exchange_id, top_n=100):
         # Extract relevant data for USDT pairs
         data = []
         for symbol, ticker in tickers.items():
-            if symbol.endswith("/USDT"):  # Filter for USDT pairs
+            if symbol.endswith("/USDT:USDT"):  # Filter for USDT pairs
                 data.append({
                     "symbol": symbol,
                     "volume_24h": ticker.get("quoteVolume", 0),  # 24h trading volume in USDT
