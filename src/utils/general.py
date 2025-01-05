@@ -69,19 +69,19 @@ class OHLCVScraper:
                     if not ohlcv:
                         retries += 1
                         print(f"No data returned. Retrying {retries}/{max_retries}...")
-                        time.sleep(1)  # Wait 1 second before retrying
+                        # time.sleep(1)  # Wait 1 second before retrying
                         continue
                     data.extend(ohlcv)
                     current_timestamp = ohlcv[-1][0] + 1  # Update timestamp to the last candle + 1ms
                     print(f"Fetched data up to {pd.to_datetime(current_timestamp, unit='ms')}")
-                    time.sleep(0.5)
+                    # time.sleep(0.5)
                     break
                 except Exception as e:
                     print(f"An error occurred: {e}")
                     retries += 1
             if retries == max_retries:
                 print(f"Max retries reached for timestamp {pd.to_datetime(current_timestamp, unit='ms')}. Skipping...")
-                current_timestamp += 1 * 60 * 1000 
+                current_timestamp += 1 * 60 * 60 * 24 * 1000 
 
         # Create DataFrame if data exists
         if data:
