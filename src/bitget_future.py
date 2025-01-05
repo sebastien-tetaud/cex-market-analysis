@@ -114,6 +114,6 @@ if __name__ == "__main__":
     for symbol in df_symbols['symbol']:
         try:
             filename = symbol.replace("/", "_") + f"_{TIMEFRAME}.csv"
-            scrape_candles_to_csv(filename, EXCHANGE_ID, 3, symbol, TIMEFRAME, FROM_DATE_STR, 1000, PATH_SAVE)
+            scrape_candles_to_csv(filename, EXCHANGE_ID, 3, symbol, TIMEFRAME, FROM_DATE_STR, 100, PATH_SAVE)
         except Exception as e:
             print(f"Failed to scrape data for {symbol}: {e}")
