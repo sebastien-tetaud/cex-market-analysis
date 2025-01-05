@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv('BITGET_SECRET_KEY')
 PASSWORD = os.getenv('BITGET_PASSWORD')
 MARKET_TYPE = "future"
 EXCHANGE_ID = "bitget"
-PATH_SAVE = f"/home/ubuntu/project/finance/cex-market-analysis/src/data/{EXCHANGE_ID}/{MARKET_TYPE}"
+PATH_SAVE = f"/home/ubuntu/project/finance/cex-market-analysis/src/data/{EXCHANGE_ID}/{MARKET_TYPE}/new/"
 TIMEFRAME = "1m"
 FROM_DATE_STR = "2024-01-01 00:00:00"
 exchange = getattr(ccxt, EXCHANGE_ID)({
@@ -111,6 +111,7 @@ if __name__ == "__main__":
 
     df_symbols = get_top_symbol_by_volume(exchange=exchange, pair_filter="/USDT:USDT", top_n=100)
     df_symbols = df_symbols.reset_index(drop=True)
+    
     for symbol in df_symbols['symbol']:
         try:
             filename = symbol.replace("/", "_") + f"_{TIMEFRAME}.csv"
