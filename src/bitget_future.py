@@ -5,18 +5,15 @@ from pathlib import Path
 
 import ccxt
 from dotenv import load_dotenv
+import pathlib
 
-# Add the parent directory to the system path
-parent_dir = Path().resolve().parent
-sys.path.append(str(parent_dir))
 
-from utils.general import (OHLCVScraper, check_missing_timestamps,
-                           get_top_symbol_by_volume)
+from utils.general import get_top_symbol_by_volume
 
 # Load environment variables
 load_dotenv()
-root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(''))))
-sys.path.append(root + '/python')
+# root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(''))))
+# sys.path.append(root + '/python')
 # Print the ccxt library version
 print(f"ccxt version: {ccxt.__version__}")
 
@@ -25,7 +22,9 @@ SECRET_KEY = os.getenv('BITGET_SECRET_KEY')
 PASSWORD = os.getenv('BITGET_PASSWORD')
 MARKET_TYPE = "future"
 EXCHANGE_ID = "bitget"
-PATH_SAVE = f"/home/ubuntu/project/finance/cex-market-analysis/src/data/{EXCHANGE_ID}/{MARKET_TYPE}/"
+parent_dir = Path().resolve().parent
+data_dir_path = os.path.join(parent_dir, "data")
+PATH_SAVE = os.path.join(data_dir_path, EXCHANGE_ID, MARKET_TYPE)
 TIMEFRAME = "1m"
 FROM_DATE_STR = "2024-01-01 00:00:00"
 exchange = getattr(ccxt, EXCHANGE_ID)({
@@ -111,10 +110,15 @@ if __name__ == "__main__":
 
     df_symbols = get_top_symbol_by_volume(exchange=exchange, pair_filter="/USDT:USDT", top_n=100)
     df_symbols = df_symbols.reset_index(drop=True)
+    data_dir_path = Path(data_dir_path) 
+    data_dir_path.mkdir(parents=True, exist_ok=True) 
     
+    df_symbols.to_csv(f"{data_dir_path}/{EXCHANGE_ID}_top_100_volume.csv")
     for symbol in df_symbols['symbol']:
         try:
             filename = symbol.replace("/", "_") + f"_{TIMEFRAME}.csv"
             scrape_candles_to_csv(filename, EXCHANGE_ID, 3, symbol, TIMEFRAME, FROM_DATE_STR, 100, PATH_SAVE)
         except Exception as e:
             print(f"Failed to scrape data for {symbol}: {e}")
+
+    
